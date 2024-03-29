@@ -45,6 +45,15 @@ Metode:
                 i (int) ... indeks polinoma
         - Izhod: (list[float]) koeficienti razlike drugih odvodov polinomov i in i - 1 v točki x. Oblika: [0, ..., 0, 0, 0, 2, 6x, 0, 0, -2, -6x, 0, ..., 0]
 
+    - coefs_natural(x, i): vrne koeficiente drugega odvoda polinoma i v točki x za nastavitev sistema enačb.
+        - Vhod: x (float) ... točka, v kateri računamo koeficiente
+                i (int) ... indeks polinoma
+        - Izhod: (list[float]) koeficienti drugega odvoda polinoma i v točki x. Oblika: [0, ..., 0, 0, 2, 6x, 0, ..., 0]
+    
+    - v(x): vrne vrednost zlepka v točki x
+        - Vhod: x (float) ... točka, v kateri računamo vrednost zlepka
+        - Izhod: (float) vrednost zlepka v točki x
+
 """
 class Zlepek:
     def __init__(self, x, y):
@@ -62,6 +71,13 @@ class Zlepek:
 
     def coefs_natural(self, x, i):
         return [0] * 4 * i + [0, 0, 2, 6 * x] + [0] * (4 * (self.interpolacijske_tocke.shape[1] - i - 2))
+    
+    def v(self, x):
+        for i in range(len(self.interpolacijske_tocke[0]) - 1):
+            if x >= self.interpolacijske_tocke[0][i] and x <= self.interpolacijske_tocke[0][i + 1]:
+                return self.polinomi[i].v(x)
+            
+        return None
 
 """
 interpoliraj(x, y): interpolira dane točke (x, y) z zlepkom.
@@ -110,7 +126,7 @@ def interpoliraj(x, y):
         if i == 0:
             A.append(Z.coefs_natural(x1, i))
             b.append(0)
-        elif i == len(x) - 2:
+        if i == len(x) - 2:
             A.append(Z.coefs_natural(x2, i))
             b.append(0)
 
@@ -132,10 +148,12 @@ plot(Z): izriše zlepek Z in njegove interpolacijske točke.
 
 Vhod:
     - Z (Zlepek): zlepek.
+    - func (lambda): funkcija, iz katere so bile generirane točke. 
+                     Na grafu je predstavljena s črtkano črto.
 
 Izhod: /
 """
-def plot(Z):
+def plot(Z, func=None):
     # Priprava interpolacijskih točk
     x = Z.interpolacijske_tocke[0]
     y = Z.interpolacijske_tocke[1]
@@ -159,14 +177,20 @@ def plot(Z):
     # Izris interpolacijskih točk
     plt.plot(x, y, 'ko')
 
+    # Izris funkcije func, če je podana
+    if func is not None:
+        xf = np.linspace(x[0], x[-1], 100)
+        yf = func(xf)
+        plt.plot(xf, yf, 'k--')
+
     plt.show()
 
 def main():
     x = np.array([-2, -1, 0, 1, 2])
-    y = x ** 4
-
+    y = np.array([4, 1, 0, 1, 4])
     Z = interpoliraj(x, y)
-    plot(Z)
+
+    plot(Z, lambda x: x ** 2)
 
 if __name__ == "__main__":
     main()
